@@ -1,0 +1,46 @@
+import requests
+from bs4 import BeautifulSoup
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+
+# ✅ チェックするページURL（ナローのサイズ23cm）
+url = "https://www.birkenstock.com/jp/boston-suede-leather/boston-core-suedeleather-0-evarubber-u_27.html?dwvar_boston-core-suedeleather-0-evarubber-u__27_width=S&dwvar_boston-core-suedeleather-0-evarubber-u__27_size=23&region=JP"
+
+# Gmailの設定
+GMAIL_USER = "okasidaisuki0102@gmail.com"
+GMAIL_APP_PASSWORD = "qnwg jpir etuo vady"  # 16桁のアプリパスワード
+
+# ✅ 在庫チェック関数（HTMLを解析）
+def check_stock():
+    response = requests.get(url)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # ✅ <div class="availability-web"> の中を取得
+    availability_section = soup.find("div", class_="availability-web")
+
+    # ✅ "在庫あり" のテキストを含むか確認
+    if availability_section and availability_section.find("p", class_="in-stock-msg"):
+        print("🎉 幅ナローのサイズ23が復活！メール通知を送信します。")
+        send_email("【在庫あり】Birkenstock サイズ23（幅ナロー）入荷", f"在庫が復活しました！今すぐチェック: {url}")
+    else:
+        print("❌ 在庫なし。")
+
+# ✅ メール送信関数
+def send_email(subject, body):
+    recipient = GMAIL_USER
+
+    msg = MIMEMultipart()
+    msg["From"] = GMAIL_USER
+    msg["To"] = recipient
+    msg["Subject"] = subject
+    msg.attach(MIMEText(body, "plain", "utf-8"))
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+        server.sendmail(GMAIL_USER, recipient, msg.as_string())
+
+    print("✅ メール通知送信完了")
+
+# ✅ スクリプト実行
+check_stock()
